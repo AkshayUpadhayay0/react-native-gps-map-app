@@ -1,112 +1,251 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import * as Location from 'expo-location';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import MapView, { Marker, Region } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+const DEFAULT_DELTA = {
+  latitudeDelta: 0.005,
+  longitudeDelta: 0.005,
+};
 
-export default function TabTwoScreen() {
+export default function ExploreScreen() {
+  const mapRef = useRef<MapView>(null);
+  const watchSubscription = useRef<Location.LocationSubscription | null>(null);
+
+  const [permissionStatus, setPermissionStatus] =
+    useState<Location.PermissionStatus | null>(null);
+  const [region, setRegion] = useState<Region | null>(null);
+  const [heading, setHeading] = useState(0);
+  const [following, setFollowing] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (!isMounted) return;
+      setPermissionStatus(status);
+
+      if (status !== 'granted') {
+        setErrorMsg('Location permission was denied.');
+        setLoading(false);
+        return;
+      }
+
+      const current = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.BestForNavigation,
+      });
+      if (!isMounted) return;
+
+      const initialRegion: Region = {
+        latitude: current.coords.latitude,
+        longitude: current.coords.longitude,
+        ...DEFAULT_DELTA,
+      };
+      setRegion(initialRegion);
+      setHeading(current.coords.heading ?? 0);
+      setLoading(false);
+
+      watchSubscription.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: 1000,
+          distanceInterval: 1,
+        },
+        (loc) => {
+          if (!isMounted) return;
+          const nextRegion: Region = {
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+            ...DEFAULT_DELTA,
+          };
+          setRegion(nextRegion);
+          setHeading(loc.coords.heading ?? 0);
+
+          if (following && mapRef.current) {
+            mapRef.current.animateToRegion(nextRegion, 500);
+          }
+        }
+      );
+    })();
+
+    return () => {
+      isMounted = false;
+      watchSubscription.current?.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const recenter = () => {
+    if (region && mapRef.current) {
+      mapRef.current.animateToRegion(region, 500);
+    }
+    setFollowing(true);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#4F8EF7" />
+        <Text style={styles.loadingText}>Locating you…</Text>
+      </View>
+    );
+  }
+
+  if (permissionStatus !== 'granted' || !region) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorTitle}>Location Access Needed</Text>
+        <Text style={styles.errorText}>{errorMsg}</Text>
+        <Pressable
+          style={styles.button}
+          onPress={() => Location.requestForegroundPermissionsAsync()}
+        >
+          <Text style={styles.buttonText}>Grant Permission</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        initialRegion={region}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        showsCompass
+        rotateEnabled
+        onPanDrag={() => setFollowing(false)}
+      >
+        <Marker
+          coordinate={{
+            latitude: region.latitude,
+            longitude: region.longitude,
+          }}
+          anchor={{ x: 0.5, y: 0.5 }}
+          flat
+          rotation={heading}
+        >
+          <View style={styles.markerDot}>
+            <View style={styles.markerDotInner} />
+          </View>
+        </Marker>
+      </MapView>
+
+      <Pressable style={styles.recenterButton} onPress={recenter}>
+        <Text style={styles.recenterText}>{following ? '◎' : '⊙'}</Text>
+      </Pressable>
+
+      <View style={[styles.coordBar, { top: insets.top + 12 }]}>
+        <Text style={styles.coordText}>
+          {region.latitude.toFixed(5)}, {region.longitude.toFixed(5)}
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: '#0D1117',
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  map: {
+    flex: 1,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0D1117',
+    padding: 24,
+    gap: 12,
+  },
+  loadingText: {
+    color: '#9CA3AF',
+    fontSize: 15,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#F9FAFB',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
+  },
+  button: {
+    backgroundColor: '#4F8EF7',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  markerDot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(79, 142, 247, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markerDotInner: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#4F8EF7',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  recenterButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 90,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#161B22',
+    borderWidth: 1,
+    borderColor: '#21262D',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recenterText: {
+    fontSize: 20,
+    color: '#4F8EF7',
+  },
+  coordBar: {
+    position: 'absolute',
+    top: 16,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(22, 27, 34, 0.9)',
+    borderWidth: 1,
+    borderColor: '#21262D',
+    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+  },
+  coordText: {
+    color: '#F9FAFB',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
