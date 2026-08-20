@@ -1,50 +1,106 @@
-# Welcome to your Expo app 👋
+# 📍 GPS Toolkit
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A lightweight, cross-platform mobile app built with **React Native** and **Expo** that reads your device's GPS sensors directly and displays live location data with a clean, native UI — no third-party tracking, no accounts, nothing sent anywhere you don't control.
 
-## Get started
+Runs natively on both **iOS** and **Android**.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## 📱 Screenshots
 
-2. Start the app
+<p align="center">
+  <img src="./screenshots/app-screen-1.jpeg" width="30%" alt="Home screen showing GPS details" />
+  <img src="./screenshots/app-screen-2.jpeg" width="30%" alt="Explore screen showing live map" />
+  <img src="./screenshots/app-screen-3.jpeg" width="30%" alt="About screen" />
+</p>
 
-   ```bash
-   npx expo start
-   ```
+<p align="center">
+  <em>Home — GPS Details &nbsp;|&nbsp; Explore — Live Map &nbsp;|&nbsp; About</em>
+</p>
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## ✨ Features
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 🏠 Home — GPS Details
+Live latitude, longitude, altitude, altitude accuracy, horizontal accuracy, heading, speed, and timestamp — refreshed every second straight from your device's location hardware. Includes on-demand reverse geocoding to resolve coordinates into a readable address.
 
-## Get a fresh project
+### 🗺️ Explore — Live Map
+A full-screen map that follows your position in real time as you move, with a custom heading-aware marker and a manual recenter button if you'd rather pan around freely.
 
-When you're ready, run:
+### ℹ️ About
+App overview, feature summary, and developer info.
+
+---
+
+## 🛠️ Built With
+
+- [React Native](https://reactnative.dev/)
+- [Expo](https://expo.dev/) (Expo Router)
+- [expo-location](https://docs.expo.dev/versions/latest/sdk/location/)
+- [react-native-maps](https://github.com/react-native-maps/react-native-maps)
+- [react-native-safe-area-context](https://github.com/AppAndFlow/react-native-safe-area-context)
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (LTS recommended)
+- [Expo Go](https://expo.dev/go) app on your physical device, **or** Android Studio / Xcode for a simulator/emulator
+- npm 10.x or 11.x (npm 12.0.x has a known bug with `create-expo-app`'s dependency resolution — downgrade if you hit JSON parsing errors during setup)
+
+### Installation
 
 ```bash
-npm run reset-project
+# Clone the repository
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
+
+# Install dependencies
+npm install
+
+# Start the development server
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Scan the QR code with the **Expo Go** app (Android) or your **Camera app** (iOS) to run it on your physical device, or press `a` / `i` in the terminal to launch an Android/iOS emulator.
 
-## Learn more
+> **Note:** If your Expo Go app from the App Store shows an "incompatible SDK version" error, install the matching SDK build from [sign.expo.dev](https://sign.expo.dev) instead.
 
-To learn more about developing your project with Expo, look at the following resources:
+### Permissions
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+This app requires **location access** to function. On first launch, you'll be prompted to grant permission — both the Home and Explore screens will show a "Grant Permission" prompt if it's denied.
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 📂 Project Structure
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+app/
+├── (tabs)/
+│   ├── index.tsx      # Home — GPS details screen
+│   ├── explore.tsx    # Explore — live map screen
+│   ├── about.tsx       # About screen
+│   └── _layout.tsx    # Tab navigation layout
+├── _layout.tsx
+└── modal.tsx
+components/
+assets/
+```
+
+---
+
+## 👨‍💻 Developer
+
+**Akshay Upadhayay**
+Software Development Engineer — 4+ Years of Experience
+
+Built and maintained as a personal project exploring native device APIs with React Native and Expo.
+
+---
+
+## 📄 License
+
+This project is open source. Feel free to fork it, learn from it, or build on top of it.
